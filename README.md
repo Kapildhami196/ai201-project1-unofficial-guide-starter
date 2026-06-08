@@ -1,162 +1,119 @@
-# The Unofficial Guide — Project 1
 
-> **How to use this template:**
-> Complete each section *after* you've built and tested the corresponding part of your system.
-> Do not write placeholder text — if a section isn't done yet, leave it blank and come back.
-> Every section below is required for submission. One-liners will not receive full credit.
+# The International Student Survival Gui
 
----
+A Retrieval-Augmented Generation (RAG) system that answers practical questions about studying in the USA as an international student, based on real Reddit posts from r/InternationalStudents and r/f1visa.
 
 ## Domain
 
-<!-- What topic or category of knowledge does your system cover?
-     Why is this knowledge valuable, and why is it hard to find through official channels?
-     Example: "Student reviews of CS professors at [university] — useful because official
-     course descriptions don't reflect teaching style, exam difficulty, or workload." -->
+The domain is unofficial survival knowledge for international students in the USA — the real, practical information students share with each other on Reddit, but that never appears on any university website.
 
----
+This knowledge is valuable because it covers what no official source will tell you: how brutal the OPT job market really is, how to get affordable health insurance, what work F-1 students can legally do, and how to actually make friends when everyone already knows each other.
 
 ## Document Sources
 
-<!-- List every source you collected documents from.
-     Be specific: include URLs, subreddit names, forum thread titles, or file names.
-     Aim for variety — sources that together cover different subtopics or perspectives. -->
-
 | # | Source | Type | URL or file path |
-|---|--------|------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
-
----
+| --- | ------ | ---- | ---------------- |
+| 1  | r/InternationalStudents | Reddit thread | documents/doc1.txt — first semester mistakes |
+| 2  | r/InternationalStudents | Reddit thread | documents/doc2.txt — tips before coming to USA |
+| 3  | r/InternationalStudents | Reddit thread | documents/doc3.txt — US safety fears |
+| 4  | r/InternationalStudents | Reddit thread | documents/doc4.txt — teacher warning post |
+| 5  | r/InternationalStudents | Reddit thread | documents/doc5.txt — how students afford travel |
+| 6  | r/InternationalStudents | Reddit thread | documents/doc6.txt — F1 visa work restrictions |
+| 7  | r/InternationalStudents | Reddit thread | documents/doc7.txt — cost of US education |
+| 8  | r/f1visa | Reddit thread | documents/doc8.txt — health insurance for F1/OPT |
+| 9  | r/InternationalStudents | Reddit thread | documents/doc9.txt — F1/OPT/H1B job market |
+| 10 | r/Advice + r/InternationalStudents | Reddit thread | documents/doc10.txt — cultural shock and friends |
 
 ## Chunking Strategy
 
-<!-- Describe your chunking approach with enough specificity that someone else could reproduce it.
-     Include:
-     - Chunk size (characters or tokens) and why that size fits your documents
-     - Overlap size and why (or why not) you used overlap
-     - Any preprocessing you did before chunking (e.g., stripping HTML, removing headers)
-     - What your final chunk count was across all documents -->
+**Chunk size:** 400 characters
 
-**Chunk size:**
-
-**Overlap:**
+**Overlap:** 75 characters
 
 **Why these choices fit your documents:**
 
-**Final chunk count:**
+Most of the documents are short Reddit comments where one person gives one piece of advice in 1-3 sentences. Key facts are usually concentrated in a single sentence. A chunk size of 400 characters fits most Reddit comments as one complete thought.
 
----
+An overlap of 75 characters means each chunk shares context with the next one.
+
+**Final chunk count:** 97 chunks across 10 documents.
+
+## Sample Chunks
+
+**Chunk from doc1.txt:** Did not explore scholarships opening next semester. Honors scholarships can be up to 5000 dollars. Did not join enough clubs. Should have gotten an on-campus job early to get SSN.
+
+**Chunk from doc6.txt:** Legal ways to earn money on F1 visa: On-campus employment up to 20 hours per week. CPT for work related to your major. OPT after graduation.
+
+**Chunk from doc8.txt:** Affordable options for F1 students: ISO insurance around 70 dollars per month for basic coverage. PSI insurance similar to ISO. Compass insurance another popular option.
+
+**Chunk from doc9.txt:** Apply for OPT up to 90 days before graduation not after. Start applying for jobs 6 months before graduation. Target smaller companies that are more flexible about visa situations.
+
+**Chunk from doc10.txt:** Start small. Look around and see if you notice another student who seems away from the group. Smile at them, and if they smile back, make small talk.
 
 ## Embedding Model
 
-<!-- Name the embedding model you used and explain your choice.
-     Then answer: if you were deploying this system for real users and cost wasn't a constraint,
-     what tradeoffs would you weigh in choosing a different model?
-     Consider: context length limits, multilingual support, accuracy on domain-specific text,
-     latency, and local vs. API-hosted. -->
-
-**Model used:**
+**Model used:** all-MiniLM-L6-v2 (via sentence-transformers, runs locally)
 
 **Production tradeoff reflection:**
 
----
+I used all-MiniLM-L6-v2 because it runs locally with no API key and no rate limits — perfect for a student project. If deployed for real users with no cost constraint, I would consider OpenAI text-embedding-3-large for better semantic accuracy, Cohere multilingual embeddings for international students querying in native languages, or larger sentence-transformers like all-mpnet-base-v2 for higher quality at 3x slower speed.
 
 ## Grounded Generation
 
-<!-- Explain how your system enforces grounding — how does it prevent the LLM from answering
-     beyond the retrieved documents?
-     Describe both your system prompt (what instruction you gave the model) and any structural
-     choices (e.g., how you formatted the context, whether you filtered low-relevance chunks).
-     Do not just say "I told it to use the documents" — show the actual instruction or explain
-     the mechanism. -->
-
 **System prompt grounding instruction:**
 
-**How source attribution is surfaced in the response:**
+The LLM is given this instruction: "Answer the user's question using ONLY the context below. If the context does not contain enough information, say: The documents do not provide enough information to answer this fully."
 
----
+**How source attribution is surfaced:**
+
+After generation, the system programmatically appends a Retrieved from section showing the source filename, chunk index, and distance score. Citations are guaranteed by the pipeline.
 
 ## Evaluation Report
 
-<!-- Run your 5 test questions from planning.md through your system and record the results.
-     Be honest — a partially accurate or inaccurate result that you explain well is more
-     valuable than a suspiciously perfect result. -->
+| # | Question | Expected answer | System response | Retrieval | Accuracy |
+| --- | -------- | --------------- | --------------- | --------- | -------- |
+| 1 | What are the biggest mistakes international students make in their first semester? | Wrong accommodation, overspending, not networking, poor time management | Listed wrong accommodation, overspending, not networking, poor time management, ignoring scholarships | Relevant | Accurate |
+| 2 | How can I build credit in the US without a SSN? | Get ITIN, secured cards, cross-border banks | The documents do not provide enough information to answer this fully | Off-target | Inaccurate (correct refusal) |
+| 3 | What work can I legally do on an F-1 student visa? | On-campus 20 hrs, CPT, OPT 12 or 36 months for STEM | Said 3 years under OPT — missed CPT and on-campus rules | Partially relevant | Partially accurate |
+| 4 | How hard is it to find a job after graduation on OPT? | Very hard, companies filter out visa applicants, apply early | Explained visa checkbox problem and gave correct strategies | Relevant | Accurate |
+| 5 | How do I deal with cultural shock and make friends in the US? | Start small, join clubs, give it time | Described starting small with smiles and small talk | Relevant | Accurate |
 
-| # | Question | Expected answer | System response (summarized) | Retrieval quality | Response accuracy |
-|---|----------|-----------------|------------------------------|-------------------|-------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
-
-**Retrieval quality:** Relevant / Partially relevant / Off-target  
-**Response accuracy:** Accurate / Partially accurate / Inaccurate
-
----
+**Summary:** 3 accurate, 1 partially accurate, 1 honest refusal.
 
 ## Failure Case Analysis
 
-<!-- Identify at least one question where retrieval or generation did not work as expected.
-     Write a specific explanation of *why* it failed, tied to a part of the pipeline.
+**Question that failed:** How can I build credit in the US without a SSN?
 
-     "The answer was wrong" is not an explanation.
+**What the system returned:** The documents do not provide enough information to answer this fully. Retrieved chunks had distance scores 1.055, 1.315, 1.323, 1.434 — all above 1.0.
 
-     "The relevant information was split across a chunk boundary, so retrieval returned
-     only half the context — the model didn't have enough to answer correctly" is an explanation.
+**Root cause:**
 
-     "The embedding model treated the professor's nickname as out-of-vocabulary and returned
-     results from an unrelated review" is an explanation. -->
+This is a document coverage failure, not a retrieval or generation failure. None of my 10 source documents specifically discuss building credit without an SSN. When I built the document collection in Milestone 1, I focused on broader topics like mistakes, visa rules, jobs, insurance, and social life — but did not include a dedicated source on credit-building. The high distance scores correctly indicated weak matches, and the grounded prompt told the system to refuse rather than hallucinate.
 
-**Question that failed:**
+**What I would change to fix it:**
 
-**What the system returned:**
-
-**Root cause (tied to a specific pipeline stage):**
-
-**What you would change to fix it:**
-
----
+Add at least one document specifically about banking and credit for international students. A second advanced fix would be hybrid search combining semantic search with BM25 keyword matching, which would catch exact terms like SSN and credit even when semantic similarity scored them weakly.
 
 ## Spec Reflection
 
-<!-- Reflect on how planning.md shaped your implementation.
-     Answer both questions with at least 2–3 sentences each. -->
+**One way the spec helped:**
 
-**One way the spec helped you during implementation:**
+Writing the chunking strategy in planning.md before writing code forced me to think about what my documents actually looked like. I noticed Reddit comments concentrate facts in single sentences. This led me to pick 400 characters and 75 overlap, which worked well — 97 chunks with most queries returning relevant results.
 
-**One way your implementation diverged from the spec, and why:**
+**One way the implementation diverged:**
 
----
+My spec said I would use LangChain RecursiveCharacterTextSplitter, but I switched to a simpler manual chunking function. LangChain was not in the starter requirements.txt and adding it would have required extra dependencies. Manual chunking with text slicing worked fine and kept dependencies minimal.
 
 ## AI Usage
 
-<!-- Describe at least 2 specific instances where you used an AI tool during this project.
-     For each: what did you give the AI as input, what did it produce, and what did you
-     change, override, or direct differently?
-
-     "I used Claude to help me code" is not sufficient.
-     "I gave Claude my Chunking Strategy section from planning.md and asked it to implement
-     chunk_text(). It returned a function using a fixed character split. I overrode the
-     chunk size from 500 to 200 because my documents are short reviews, not long guides." -->
-
 **Instance 1**
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* My planning.md chunking strategy and asked it to write ingest.py.
+- *What it produced:* A script that loads .txt files, cleans them with regex, chunks them with 400/75 overlap, embeds with all-MiniLM-L6-v2, and stores in ChromaDB.
+- *What I changed:* The AI initially used LangChain text splitter requiring extra dependencies. I asked it to rewrite using only the packages in my requirements.txt.
 
 **Instance 2**
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+- *What I gave the AI:* My grounding requirement and asked for rag.py and app.py.
+- *What it produced:* rag.py with retrieval and generation logic, and app.py with a Gradio interface and 5 example questions.
+- *What I changed:* The AI initially used llama-3.1-8b-instant, but my planning.md specified llama-3.3-70b-versatile. I changed it to match the spec. I also added distance scores to the source output so retrieval quality shows in the UI.
